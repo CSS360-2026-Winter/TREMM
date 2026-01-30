@@ -24,7 +24,7 @@ const getWelcomeMessage = (userId) => {
     Play around with the code here and customise the welcome message.
   */
   return {
-    content: `Welcome ${userMention(userId)}, to TREMMMMM !!`,
+    content: `Here is a Great Meme: ;)`,
   };
 };
 

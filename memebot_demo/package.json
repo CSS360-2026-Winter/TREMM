@@ -5,6 +5,7 @@
   "scripts": {
     "build": "rm -rf build && esbuild src/*.js src/**/*.js --platform=node --format=cjs --outdir=build --outbase=src",
     "register": "npm run build && node -r dotenv/config build/deploy-commands.js",
+
     "start": "npm run build && node -r dotenv/config build/app.js",
     "dev": "nodemon",
     "prod": "node build/app.js",
