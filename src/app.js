@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { Client, GatewayIntentBits, Partials, Collection } from "discord.js";
 import { loadEvents } from "./helpers";
 import path from "path";
