@@ -3,7 +3,7 @@ Manraj:
 
 
 
-Tanisha: <img width="657" height="659" alt="TanishaThakare-UseCaseDiagram" src="https://github.com/user-attachments/assets/341c0992-ef28-49da-bc9e-3a7d23152cb8" />
+Tanisha: <img width="652" height="658" alt="UseCaseDiagram-TanishaThakare" src="https://github.com/user-attachments/assets/b3d48eae-4126-4dbb-92d4-ded9316432df" />
 
 Kam: 
 Raya: 
