@@ -5,7 +5,8 @@ Manraj:
 
 Tanisha: <img width="652" height="658" alt="UseCaseDiagram-TanishaThakare" src="https://github.com/user-attachments/assets/b3d48eae-4126-4dbb-92d4-ded9316432df" />
 
-Kam: <img width="242" height="317" alt="Control Flow Graph(weather command)" src="https://github.com/user-attachments/assets/5845dbae-2130-4057-b297-32dcabdc03a2" />
+Kam: <img width="305" height="391" alt="Control Flow Graph(weather command)" src="https://github.com/user-attachments/assets/9e793e1d-84a9-493e-9b83-51b723be9820" />
+
 
 
 Raya: 
