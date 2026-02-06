@@ -5,7 +5,8 @@ Manraj:
 
 Tanisha: <img width="652" height="658" alt="UseCaseDiagram-TanishaThakare" src="https://github.com/user-attachments/assets/b3d48eae-4126-4dbb-92d4-ded9316432df" />
 
-Kam: 
+Kam: <img width="242" height="317" alt="Control Flow Graph(weather command)" src="https://github.com/user-attachments/assets/5845dbae-2130-4057-b297-32dcabdc03a2" />
+
 
 Raya: 
 <img width="900" alt="Flights Activity Diagram – Raya Parsa" src="https://github.com/CSS360-2026-Winter/TREMM/blob/main/diagrams/flights-activity-diagram%20(3).png?raw=true" />
