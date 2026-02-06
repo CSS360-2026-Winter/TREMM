@@ -6,5 +6,8 @@ Manraj:
 Tanisha: <img width="652" height="658" alt="UseCaseDiagram-TanishaThakare" src="https://github.com/user-attachments/assets/b3d48eae-4126-4dbb-92d4-ded9316432df" />
 
 Kam: 
+
 Raya: 
+<img width="900" alt="Flights Activity Diagram – Raya Parsa" src="https://github.com/CSS360-2026-Winter/TREMM/blob/main/diagrams/flights-activity-diagram%20(3).png?raw=true" />
+
 Marco: <img width="900" alt="System Context Diagram - Marco Chan" src="https://github.com/user-attachments/assets/99774f3a-2b51-48ba-83b5-ad51f57e22dd" />
