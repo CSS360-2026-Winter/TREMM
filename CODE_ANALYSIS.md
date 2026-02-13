@@ -10,12 +10,14 @@ Examined Code for Technical Debt and Code Smells in the following files:
   - Their corresponding helper files
 
 **Technical Debt:** The flaws that make code prone to problems when you want to make changes to the system (e.g. inconsistencies in formatting).
+
+
 **Code Smells:** Code structure that can cause potential problems with design and maintenance (e.g. duplicated code, long methods, etc.).
 
 **Efforts:**
-•	I went through all lines of code for each of the command files that control the slash commands in the discord bot as well as their helper files.
-•	Utilizing Command F to easily look for specific elements in the code.
-•	Writing up the technical debts, code smells, and potential solutions to those issues.
+  - I went through all lines of code for each of the command files that control the slash commands in the discord bot as well as their helper files.
+  - Utilizing Command F to easily look for specific elements in the code.
+  - Writing up the technical debts, code smells, and potential solutions to those issues.
 
 **Code Smells:**	
 1. The first code smell I immediately noticed in the files were the use of emojis. Emojis are a great way to make messages from the discord bot engaging to the user, but it is considered a code smell in the long run. Emojis are Unicode characters, which means that different systems, apps, and machines (Linux vs Windows) can replace them with bitmaps. This is problematic because it can result in different display views, making the code more complicated than it needs to be. Although, it is okay to use emojis in messages sent to the user, like in Discord.
@@ -31,26 +33,7 @@ Examined Code for Technical Debt and Code Smells in the following files:
 
 3. The last technical debt I’ll talk about is how the helper file weather.js includes a network helper section, while the helper files hotels.js and flights.js do not have retry logic. This means that if the API has a network problem or fails, the weather.js file reloads it while hotel.js and flights.js will fail and return an error after the first try. This is important to consider because it would be a usability flaw if it just failed immediately. The best solution for this would be to implement a similar network help section, just like the weather.js helper file.
 
-<img width="468" height="634" alt="image" src="https://github.com/user-attachments/assets/1ba5ab01-eb94-4786-85ae-941a696c3cf9" />
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-- **Manraj Banga**  
+**Manraj Banga**  
   - Unit testing (minimum 3 tests)  
   - Smoke testing of core bot functionality  
-
-
