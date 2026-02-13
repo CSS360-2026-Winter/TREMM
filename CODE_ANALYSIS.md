@@ -1,6 +1,57 @@
+
+**Tanisha Thakare ~ Bot Project Task #5: Examine Code for Technical Debt and Code Smells**
+
+Examined Code for Technical Debt and Code Smells in the following files:
+•	flights.js
+•	hotels.js
+•	 plantrip.js
+•	trip.js
+•	weather.js
+•	Their corresponding helper files
+
+<Technical Debt:> The flaws that make code prone to problems when you want to make changes to the system (e.g. inconsistencies in formatting).
+<Code Smells:> Code structure that can cause potential problems with design and maintenance (e.g. duplicated code, long methods, etc.).
+
+**Efforts:**
+•	I went through all lines of code for each of the command files that control the slash commands in the discord bot as well as their helper files.
+•	Utilizing Command F to easily look for specific elements in the code.
+•	Writing up the technical debts, code smells, and potential solutions to those issues.
+
+<**Code Smells:**>
+1.)	The first code smell I immediately noticed in the files were the use of emojis. Emojis are a great way to make messages from the discord bot engaging to the user, but it is considered a code smell in the long run. Emojis are Unicode characters, which means that different systems, apps, and machines (Linux vs Windows) can replace them with bitmaps. This is problematic because it can result in different display views, making the code more complicated than it needs to be. Although, it is okay to use emojis in messages sent to the user, like in Discord.
+
+2.)	The next code risk I found was the use of repeated code in multiple files. For example, our bot takes in dates for the trip among different categories, such as flights, hotels, weather, etc. The formatting in which the date is handled is different in flights.js (YYYY-MM-DD), plantrip.js (MM-DD-YYYY), and hotels.js (YYYY-MM-DD). Another example of this repeating code logic is in converting data to user readable output. The file weather.js uses pct01ToPct() method to convert decimals to percentages for rain chance, while flight.js uses formatStops() method to show 0 layovers for a direct flight and 1 layover to show one stop layover. Since the implementations are similar for these files, repeating the same logic in multiple places make it hard to keep track of. A way to solve this problem is to have a specific file just for tracking the formatting and other things for repeated code. This way, everything is all in one place so if you do need to change something, you can just change it in the one file.
+
+3.)	The last code smell I’ll talk about is having multiple actions happen in one, long method. For example, in the weather.js file, there is a method called execute(interaction), which gets the weather data for a 7-day forecast at a location, gets weekly mins, maxes, and peak rain percentages, does the formatting for all that, and then sends the whole message into the Discord channel. Having all these steps crammed into one method can make it easily prone to errors and is hard to keep track of. A way to solve this problem is to have each functionality part in a different method, then just call those methods into the execute(interaction) method. This way, it is easier to understand and test without any problems.
+
+**Technical Debt:**
+1.)	The first technical debt I have observed in the main files is how errors are being handled in the files. For example, the helper files for flights.js, hotels.js, and weather.js errors are handled with the return ({ok: false, message) command. But, in the weather.js command file, the execute method puts all this information into a try/catch block, allowing for multiple types of errors to be taken into consideration. This difference in error handling makes a huge difference in the problems that can arise, making it difficult to maintain it. A solution to this problem is to coordinate error handling so that all of the helper files handle errors in the same format, helping with consistency and easy readability.
+
+2.)	The next technical debt I have observed in the files is that there is inconsistent price formatting for the flights.js file and the hotels.js file. For example, flight prices are displayed as “$123.45” and hotel prices are displayed as “1234.56 USD.” This is important because we eventually want to implement a summary command, where it shows the summary of trip (which will show the total cost of the planned trip). This inconsistency makes it difficult to total costs up or have other functions with the cost variable. The solution that would make sense for this problem is to include a method in the files where it formats the costs a specific way in all files the same way.
+
+
+3.)	The last technical debt I’ll talk about is how the helper file weather.js includes a network helper section, while the helper files hotels.js and flights.js do not have retry logic. This means that if the API has a network problem or fails, the weather.js file reloads it while hotel.js and flights.js will fail and return an error after the first try. This is important to consider because it would be a usability flaw if it just failed immediately. The best solution for this would be to implement a similar network help section, just like the weather.js helper file.
+
+<img width="468" height="634" alt="image" src="https://github.com/user-attachments/assets/1ba5ab01-eb94-4786-85ae-941a696c3cf9" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 - **Manraj Banga**  
   - Unit testing (minimum 3 tests)  
   - Smoke testing of core bot functionality  
 
-- **Tanisha Thakare**
-  - Examine your code for technical debt and code smells
+
