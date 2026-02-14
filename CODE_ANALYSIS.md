@@ -205,66 +205,45 @@ The bot currently handles input validation partially but could improve consisten
 * **Try/Catch Blocks:** The `/meme` command and other auxiliary commands need to be wrapped in try/catch blocks to ensure that input parsing errors result in a user-friendly error message rather than a bot crash.
 
 
-Kamsochi Ekwueme ~ Bot Project Task #5: Assess Cyclomatic Complexity
+**Kamsochi Ekwueme ~ Bot Project Task #5: Assess Cyclomatic Complexity**
 
 Assessed cyclomatic complexity in the following files:
+  - src/commands/weather.js
+  - src/helpers/flights.js
+  - src/helpers/hotels.js
+  - src/helpers/weather.js
 
-src/commands/weather.js
+**Cyclomatic Complexity:** A metric that estimates how many independent execution paths a function has (more if/else, switch, early returns = higher complexity). Higher complexity generally means harder testing + higher bug risk.
 
-src/helpers/flights.js
+**Efforts:**
+  - Used ESLint’s complexity rule to measure complexity across the src/ directory.
+  - Scoped analysis to src/**/* to avoid parsing build artifacts.
+  - Saved the output for documentation.
 
-src/helpers/hotels.js
-
-src/helpers/weather.js
-
-Cyclomatic Complexity: A metric that estimates how many independent execution paths a function has (more if/else, switch, early returns = higher complexity). Higher complexity generally means harder testing + higher bug risk.
-
-Efforts:
-
-Used ESLint’s complexity rule to measure complexity across the src/ directory.
-
-Scoped analysis to src/**/* to avoid parsing build artifacts.
-
-Saved the output for documentation.
-
-Command Used:
-
-npx eslint "src/**/*.{js,mjs,cjs}" \
-  --parser-options ecmaVersion:latest,sourceType:module \
-  --rule "complexity:[2,10]" \
-  -f stylish > complexity_output.txt 2>&1
+**Command Used:**
+npx eslint "src/**/*.{js,mjs,cjs}" --parser-options ecmaVersion:latest,sourceType:module --rule "complexity:[2,10]" -f stylish > complexity_output.txt 2>&1
 cat complexity_output.txt
 
+**Findings (complexity > 10):**
+/workspaces/TREMM/src/commands/weather.js
+  25:16  error  Async method 'execute' has a complexity of 14. Maximum allowed is 10  complexity
 
-Findings (complexity > 10):
+/workspaces/TREMM/src/helpers/flights.js
+  15:1  error  Async function 'getFlightOptions' has a complexity of 12. Maximum allowed is 10  complexity
 
-src/commands/weather.js
+/workspaces/TREMM/src/helpers/hotels.js
+  10:8  error  Async function 'getHotelOptions' has a complexity of 12. Maximum allowed is 10  complexity
 
-execute complexity 14 (max allowed: 10)
+/workspaces/TREMM/src/helpers/weather.js
+  105:1  error  Function 'weatherCodeToDesc' has a complexity of 30. Maximum allowed is 10   complexity
+  165:1  error  Async function 'geocodePlace' has a complexity of 21. Maximum allowed is 10  complexity
+  250:1  error  Async function 'getWeather' has a complexity of 11. Maximum allowed is 10    complexity
 
-src/helpers/flights.js
-
-getFlightOptions complexity 12 (max allowed: 10)
-
-src/helpers/hotels.js
-
-getHotelOptions complexity 12 (max allowed: 10)
-
-src/helpers/weather.js
-
-weatherCodeToDesc complexity 30 (max allowed: 10)
-
-geocodePlace complexity 21 (max allowed: 10)
-
-getWeather complexity 11 (max allowed: 10)
-
-Interpretation:
+**Interpretation:**
 The functions above have many decision paths, which increases the number of test cases needed to cover edge cases and makes the code harder to modify safely. The largest complexity risks are in the weather helper (weatherCodeToDesc and geocodePlace) due to heavy branching.
 
-Recommendations:
+**Recommendations:**
+  - Split large functions into smaller helper methods (validation, transformation, formatting, API calls).
+  - Replace long chains of conditionals with lookup tables/maps where possible (especially weatherCodeToDesc).
+  - Prioritize additional unit tests for the high-complexity functions to cover more branches.
 
-Split large functions into smaller helper methods (validation, transformation, formatting, API calls).
-
-Replace long chains of conditionals with lookup tables/maps where possible (especially weatherCodeToDesc).
-
-Prioritize additional unit tests for the high-complexity functions to cover more branches.
