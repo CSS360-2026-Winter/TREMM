@@ -26,6 +26,18 @@ describe("hotels helper", () => {
     expect(result.ok).to.equal(false);
     expect(result.message).to.include("Check-out date must be after check-in date");
   });
+  it("returns an error when dates are invalid strings", async () => {
+  const result = await getHotelOptions({
+    cityCode: "NYC",
+    checkIn: "not-a-date",
+    checkOut: "still-not-a-date",
+    adults: 2,
+  });
+
+  expect(result.ok).to.equal(false);
+  expect(result.message).to.include("Check-out date must be after check-in date");
+  });
+
 });
 
 

@@ -39,4 +39,16 @@ describe("flights helper", () => {
     expect(result.ok).to.equal(false);
     expect(result.message).to.include("Missing required fields");
   });
+  it("fails if only departureDate is missing", async () => {
+  const result = await getFlightOptions({
+    origin: "SEA",
+    destination: "LAX",
+    departureDate: "",
+    adults: 1,
+  });
+
+  expect(result.ok).to.equal(false);
+  expect(result.message).to.include("Missing required fields");
+});
+
 });
