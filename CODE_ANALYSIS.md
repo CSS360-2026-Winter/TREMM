@@ -123,6 +123,14 @@ This threat model analyzes potential security risks in the TREMM Discord Trip Bo
 - Discord user messages
 - External API responses (flights, hotels, weather)
 
+  ### Trust Boundaries
+- Discord user input → Bot command handler
+- Command handler → Helper functions
+- Helper functions → External APIs (Flights, Hotels, Weather)
+- Bot → Discord response output
+
+These boundaries represent transitions between trusted and untrusted data sources.
+
 ### Threats Identified
 
 1. Input Validation Bypass  
@@ -156,6 +164,11 @@ Mitigation:
 - Implement rate limiting
 - Add cooldown per user
 - Cache repeated results temporarily
+
+  ### Abuse Cases
+- A user submits a 5000-character string as an airport code to attempt buffer stress.
+- A user repeatedly spams `/hotels` to overload API calls.
+- A user enters malformed dates (e.g., 13-45-9999) to trigger unexpected errors.
 
 ### Risk Severity Assessment
 
