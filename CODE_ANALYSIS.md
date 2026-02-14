@@ -34,9 +34,80 @@ Examined Code for Technical Debt and Code Smells in the following files:
 3. The last technical debt I’ll talk about is how the helper file weather.js includes a network helper section, while the helper files hotels.js and flights.js do not have retry logic. This means that if the API has a network problem or fails, the weather.js file reloads it while hotel.js and flights.js will fail and return an error after the first try. This is important to consider because it would be a usability flaw if it just failed immediately. The best solution for this would be to implement a similar network help section, just like the weather.js helper file.
 
 
-**Manraj Banga**  
-  - Unit testing (minimum 3 tests)  
-  - Smoke testing of core bot functionality
+**Manraj Banga: Unit testing 3 diffrent files with 8 tests**  
+   
+A total of **8 unit tests** were added covering validation and error-handling logic.
+
+## Files Tested
+
+### 1. `src/helpers/hotels.js`
+
+**Function tested:** `getHotelOptions()`
+
+#### Tests Added:
+- Check-out date before check-in → returns error
+- Check-out date equals check-in → returns error
+- Invalid date strings → returns error
+
+#### Findings:
+- Invalid date strings fail indirectly rather than through explicit validation.
+- There is no validation for:
+  - `adults <= 0`
+
+### 2. `src/helpers/flights.js`
+
+**Function tested:** `getFlightOptions()`
+
+#### Tests Added:
+- Missing Amadeus credentials → returns clear error
+- Missing required fields → returns clear error
+- Missing only `departureDate` → returns error
+
+#### Findings:
+- Early-return validation is implemented for missing fields.
+- Credentials are validated only when the function is called.
+- No validation exists for:
+  - `adults <= 0`
+  - invalid date format
+  - invalid IATA airport code format
+
+### 3. `src/helpers/geocode.js`
+
+**Function tested:** `geocodePlace()`
+
+Tests were implemented using a mocked `fetch` call.
+
+#### Tests Added:
+- API returns empty array → function returns `null`
+- API returns valid lat/lon → numeric conversion works correctly
+
+#### Findings:
+- Proper handling of empty API results.
+- Lat/lon values are converted using `Number()`, but:
+  - There is no validation for malformed numeric values.
+
+#### Weakness Identified:
+If the external API returned malformed coordinates, the function would return `NaN` values without validation.
+
+
+### 1. Tight Coupling to External APIs
+
+Core helpers depend heavily on live API responses.
+
+Implications:
+- Harder to test success paths without mocking
+- Greater risk of runtime failures due to API changes or rate limits
+- Logic and network concerns are tightly coupled
+
+**Recommendation:**
+Separate:
+- Input validation
+- Data transformation
+- External API calls
+
+This would improve testability and maintainability.
+
+
 
 ## Raya Parsa — Threat Modeling (Bot Project Task #5)
 
