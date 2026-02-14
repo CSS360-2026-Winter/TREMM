@@ -36,4 +36,67 @@ Examined Code for Technical Debt and Code Smells in the following files:
 
 **Manraj Banga**  
   - Unit testing (minimum 3 tests)  
-  - Smoke testing of core bot functionality  
+  - Smoke testing of core bot functionality
+
+## Raya Parsa — Threat Modeling (Bot Project Task #5)
+
+### Overview
+This threat model analyzes potential security risks in the TREMM Discord Trip Bot, focusing on user input handling, API calls, environment variables, and message output.
+
+### Assets to Protect
+- API keys stored in environment variables
+- User-provided trip data
+- Discord bot token
+- External API responses
+
+### Entry Points
+- Slash command inputs (origin, destination, date, adults)
+- Discord user messages
+- External API responses (flights, hotels, weather)
+
+### Threats Identified
+
+1. Input Validation Bypass  
+Users could input malformed airport codes or invalid dates to break logic or cause unexpected API errors.
+
+Mitigation:
+- Strict validation of IATA codes
+- Date format enforcement
+- Reject past dates
+
+2. API Failure / Network Dependency  
+If external APIs fail, the bot may crash or expose error details.
+
+Mitigation:
+- Consistent error handling pattern (`{ ok: false, message }`)
+- Retry logic similar to weather helper
+- Graceful fallback responses
+
+3. Sensitive Data Exposure  
+If environment variables or API keys are logged or committed accidentally, credentials could be leaked.
+
+Mitigation:
+- Use `.env` files
+- Ensure `.env` is in `.gitignore`
+- Never log tokens or secrets
+
+4. Denial of Service (Spam Commands)  
+Users could repeatedly spam slash commands causing excessive API calls.
+
+Mitigation:
+- Implement rate limiting
+- Add cooldown per user
+- Cache repeated results temporarily
+
+### Risk Severity Assessment
+
+| Threat | Likelihood | Impact | Severity |
+|--------|------------|--------|----------|
+| Invalid input | High | Medium | Medium |
+| API failure | Medium | Medium | Medium |
+| Credential leak | Low | High | High |
+| Spam abuse | Medium | Medium | Medium |
+
+### Conclusion
+The bot currently handles input validation partially but could improve consistency in error handling, retry logic, and rate limiting. Addressing these areas would reduce technical risk and improve reliability.
+
