@@ -4,6 +4,12 @@ let token = null;
 let tokenExpiresAt = 0;
 
 async function getToken() {
+  if (!process.env.AMADEUS_CLIENT_ID || !process.env.AMADEUS_CLIENT_SECRET) {
+  throw new Error(
+    "Missing Amadeus credentials: set AMADEUS_CLIENT_ID and AMADEUS_CLIENT_SECRET"
+  );
+}
+
   if (token && Date.now() < tokenExpiresAt) return token;
 
   const res = await fetch(`${BASE_URL}/v1/security/oauth2/token`, {
@@ -11,8 +17,8 @@ async function getToken() {
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
       grant_type: "client_credentials",
-      client_id: process.env.AMADEUS_API_KEY,
-      client_secret: process.env.AMADEUS_API_SECRET,
+      client_id: process.env.AMADEUS_CLIENT_ID,
+      client_secret: process.env.AMADEUS_CLIENT_SECRET,
     }),
   });
 
