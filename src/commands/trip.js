@@ -60,6 +60,9 @@ export default {
     }
 
     // ---- Plain text output with correct spacing ----
+    let message = `**Activities Near ${destination}**\n`;
+    message += `Source: ${source}\n\n`;
+    
     activities.slice(0, 5).forEach((a, i) => {
         const price = a.price ? a.price : "N/A";
         const desc = a.description ? shorten(a.description, 160) : "";
