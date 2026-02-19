@@ -1,64 +1,98 @@
+// src/commands/plantrip.js
 const { SlashCommandBuilder } = require('discord.js');
+const { geocodePlace } = require('../helpers/geocode.js'); // your helper
+
+// -------------------- Date validation helper --------------------
+function validateDates(input) {
+  const parts = input.split('to').map(p => p.trim());
+  if (parts.length !== 2) return { ok: false, message: 'Dates must be in format YYYY-MM-DD to YYYY-MM-DD.' };
+
+  const start = new Date(parts[0]);
+  const end = new Date(parts[1]);
+
+  if (isNaN(start) || isNaN(end)) return { ok: false, message: 'Invalid date(s). Use YYYY-MM-DD.' };
+  if (end < start) return { ok: false, message: 'End date cannot be before start date.' };
+
+  return { ok: true, start, end };
+}
+
+// -------------------- Destination validation helper --------------------
+async function validateDestination(place) {
+  const geo = await geocodePlace(place);
+  if (!geo) return { ok: false, message: `Could not find "${place}". Try a real place, like "Seattle, WA"` };
+  return { ok: true, geo };
+}
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('plantrip')
-    .setDescription('Start planning a group trip!'),
+    .setDescription('Start Planning a Trip!'),
 
   async execute(interaction) {
-    // 1. Create a storage object to 'hold' the data during this command run
-    const tripDetails = {
-      destination: '',
-      dates: ''
-    };
+    // Must defer reply first in Discord.js v14
+    await interaction.deferReply();
 
-    await interaction.reply('Where do you want to go for the trip?');
-
-    // Only listen to the person who started the command
+    const tripDetails = { destination: '', dates: '' };
     const filter = m => m.author.id === interaction.user.id;
 
-    // --- STEP 1: Collect Destination ---
-    const destinationCollector = interaction.channel.createMessageCollector({ 
-        filter, 
-        max: 1, 
-        time: 60000 
-    });
+    // -------------------- STEP 1: Destination --------------------
+    let destinationValid = false;
+    while (!destinationValid) {
+      await interaction.followUp('Where Do You Want to Go For the Trip?');
 
-    destinationCollector.on('collect', m1 => {
-      tripDetails.destination = m1.content; // Save to our object
-
-      interaction.followUp('What are the trip dates? (MM/DD/YYYY to MM/DD/YYYY)');
-
-      // --- STEP 2: Collect Dates (Nested inside the first) ---
-      const datesCollector = interaction.channel.createMessageCollector({ 
-          filter, 
-          max: 1, 
-          time: 60000 
-      });
-
-      datesCollector.on('collect', m2 => {
-        tripDetails.dates = m2.content; // Save to our object
-        
-        // --- STEP 3: Final Output ---
-        // Now we can use both tripDetails.destination and tripDetails.dates
-        interaction.followUp(
-            `**Trip Plan Created:**\n` +
-            `**Destination:** ${tripDetails.destination}\n` +
-            `**Dates:** ${tripDetails.dates}`
-        );
-      });
-
-      datesCollector.on('end', collected => {
-        if (collected.size === 0) {
-          interaction.followUp('You took too long to provide dates. Trip planning cancelled.');
-        }
-      });
-    });
-
-    destinationCollector.on('end', collected => {
-      if (collected.size === 0) {
-        interaction.followUp('You took too long to provide a destination. Trip planning cancelled.');
+      let collected;
+      try {
+        collected = await interaction.channel.awaitMessages({
+          filter,
+          max: 1,
+          time: 60000,
+          errors: ['time'],
+        });
+      } catch {
+        return interaction.followUp('You took too long to provide a destination. Trip planning cancelled.');
       }
-    });
+
+      const destInput = collected.first().content;
+      const destCheck = await validateDestination(destInput);
+
+      if (!destCheck.ok) {
+        await interaction.followUp(destCheck.message + ' Please try again.');
+      } else {
+        tripDetails.destination = destCheck.geo.displayName;
+        destinationValid = true;
+      }
+    }
+
+    // -------------------- STEP 2: Dates --------------------
+    let datesValid = false;
+    while (!datesValid) {
+      await interaction.followUp('What are the trip dates? (YYYY-MM-DD to YYYY-MM-DD)');
+
+      let collected;
+      try {
+        collected = await interaction.channel.awaitMessages({
+          filter,
+          max: 1,
+          time: 60000,
+          errors: ['time'],
+        });
+      } catch {
+        return interaction.followUp('You took too long to provide dates. Trip planning cancelled.');
+      }
+
+      const dateInput = collected.first().content;
+      const dateCheck = validateDates(dateInput);
+
+      if (!dateCheck.ok) {
+        await interaction.followUp(dateCheck.message + ' Please try again.');
+      } else {
+        tripDetails.dates = `${dateCheck.start.toISOString().split('T')[0]} to ${dateCheck.end.toISOString().split('T')[0]}`;
+        datesValid = true;
+      }
+    }
+
+    await interaction.followUp(
+      `**Trip Plan Created:**\n**Destination:** ${tripDetails.destination}\n**Dates:** ${tripDetails.dates}`
+    );
   },
 };
