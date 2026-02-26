@@ -10,9 +10,15 @@ import { getActivitiesByLatLon } from "./amadeus.js";
 
 // CJS helpers (based on your commands using require):
 import { createRequire } from "node:module";
-const require = createRequire(import.meta.url);
+
+// ✅ Works after esbuild outputs CJS, because __filename exists there.
+// ✅ Still works in ESM contexts, because import.meta.url exists there.
+const require = createRequire(
+  typeof __filename !== "undefined" ? __filename : import.meta.url
+);
+
 const { getWeather } = require("./weather.js");
-const { getFlightOptions } = require("./flights"); // note: your flights command requires "../helpers/flights" :contentReference[oaicite:5]{index=5}
+const { getFlightOptions } = require("./flights"); // keep your correct helper path
 
 function makeFallbackActivities(destination) {
   return [
