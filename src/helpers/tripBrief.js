@@ -8,17 +8,9 @@ import { getHotelOptions } from "./hotels.js";
 import { geocodePlace } from "./geocode.js";
 import { getActivitiesByLatLon } from "./amadeus.js";
 
-// CJS helpers (based on your commands using require):
-import { createRequire } from "node:module";
-
-// ✅ Works after esbuild outputs CJS, because __filename exists there.
-// ✅ Still works in ESM contexts, because import.meta.url exists there.
-const require = createRequire(
-  typeof __filename !== "undefined" ? __filename : import.meta.url
-);
-
+// CJS helpers (build output is CJS, so plain require is safest)
 const { getWeather } = require("./weather.js");
-const { getFlightOptions } = require("./flights"); // keep your correct helper path
+const { getFlightOptions } = require("./flights");
 
 function makeFallbackActivities(destination) {
   return [
