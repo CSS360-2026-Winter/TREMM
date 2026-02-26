@@ -32,6 +32,7 @@ export default {
           `Address: ${r.address}`,
           r.description ? `Description: ${r.description}` : null,
           `View on Google: <${r.url}>`
+          ""
         );
       });
 
