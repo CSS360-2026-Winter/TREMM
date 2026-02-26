@@ -1,6 +1,18 @@
 // src/helpers/tripEmbeds.js
 import { EmbedBuilder } from "discord.js";
 
+function stripHtml(s) {
+  return String(s ?? "")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function shorten(s, n = 160) {
+  const t = stripHtml(s);
+  return t.length > n ? t.slice(0, n - 1) + "…" : t;
+}
+
 function truncate(s, max = 900) {
   const t = String(s ?? "");
   return t.length > max ? t.slice(0, max - 1) + "…" : t;
