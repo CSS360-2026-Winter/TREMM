@@ -10,6 +10,7 @@ Kam: <img width="305" height="391" alt="Control Flow Graph(weather command)" src
 
 
 Raya: 
-<img width="900" alt="Flights Activity Diagram – Raya Parsa" src="https://github.com/CSS360-2026-Winter/TREMM/blob/main/diagrams/flights-activity-diagram%20(3).png?raw=true" />
+<img width="900" alt="Flights Activity Diagram – Raya Parsa" src="https://github.com/CSS360-2026-Winter/TREMM/blob/main/flights-activity-diagram%20(4).png?raw=true" />
+
 
 Marco: <img width="900" alt="System Context Diagram - Marco Chan" src="https://github.com/user-attachments/assets/99774f3a-2b51-48ba-83b5-ad51f57e22dd" />
