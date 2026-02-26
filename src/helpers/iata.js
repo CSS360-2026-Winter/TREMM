@@ -1,27 +1,69 @@
 // src/helpers/iata.js
-// Requires env vars:
-// AMADEUS_CLIENT_ID, AMADEUS_CLIENT_SECRET
-// Optional: AMADEUS_BASE_URL (defaults to sandbox)
 
-let cachedToken = null; // { access_token, expires_at_ms }
+const BASE_URL = process.env.AMADEUS_BASE_URL || "https://test.api.amadeus.com";
+
+// Support multiple env naming styles (in case your repo uses different names)
+const CLIENT_ID =
+  process.env.AMADEUS_CLIENT_ID ||
+  process.env.AMADEUS_API_KEY ||
+  process.env.AMADEUS_KEY;
+
+const CLIENT_SECRET =
+  process.env.AMADEUS_CLIENT_SECRET ||
+  process.env.AMADEUS_API_SECRET ||
+  process.env.AMADEUS_SECRET;
+
+let cachedToken = null; // { token: string, expiresAt: number }
+const cache = new Map(); // placeKey -> { cityCode, airportCode }
+
+function looksLikeIata3(s) {
+  return typeof s === "string" && /^[A-Za-z]{3}$/.test(s.trim());
+}
+
+function normalizePlace(s) {
+  return String(s ?? "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .replace(/[^\w\s,.-]/g, "");
+}
+
+function buildKeywordAttempts(place) {
+  const p = normalizePlace(place);
+  const attempts = new Set();
+
+  // full string
+  attempts.add(p);
+
+  // before comma ("Seattle, WA" -> "Seattle")
+  const beforeComma = p.split(",")[0]?.trim();
+  if (beforeComma) attempts.add(beforeComma);
+
+  // remove common state/country codes at end ("Dallas TX" -> "Dallas")
+  const tokens = beforeComma.split(" ");
+  if (tokens.length >= 2) {
+    const last = tokens[tokens.length - 1];
+    if (/^[A-Za-z]{2}$/.test(last)) attempts.add(tokens.slice(0, -1).join(" "));
+  }
+
+  // only first word (helps weird inputs)
+  attempts.add(beforeComma.split(" ")[0]);
+
+  return [...attempts].filter(Boolean);
+}
 
 async function getAmadeusToken() {
-  const baseUrl = process.env.AMADEUS_BASE_URL || "https://test.api.amadeus.com";
-  const clientId = process.env.AMADEUS_CLIENT_ID;
-  const clientSecret = process.env.AMADEUS_CLIENT_SECRET;
-
-  if (!clientId || !clientSecret) return null;
+  if (!CLIENT_ID || !CLIENT_SECRET) return null;
 
   const now = Date.now();
-  if (cachedToken && cachedToken.expires_at_ms - 30_000 > now) return cachedToken.access_token;
+  if (cachedToken && cachedToken.expiresAt - 30_000 > now) return cachedToken.token;
 
   const body = new URLSearchParams({
     grant_type: "client_credentials",
-    client_id: clientId,
-    client_secret: clientSecret,
+    client_id: CLIENT_ID,
+    client_secret: CLIENT_SECRET,
   });
 
-  const res = await fetch(`${baseUrl}/v1/security/oauth2/token`, {
+  const res = await fetch(`${BASE_URL}/v1/security/oauth2/token`, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body,
@@ -33,21 +75,21 @@ async function getAmadeusToken() {
   const expiresInSec = Number(json.expires_in ?? 0);
 
   cachedToken = {
-    access_token: json.access_token,
-    expires_at_ms: now + Math.max(60, expiresInSec) * 1000,
+    token: json.access_token,
+    expiresAt: now + Math.max(60, expiresInSec) * 1000,
   };
 
-  return cachedToken.access_token;
+  return cachedToken.token;
 }
 
-async function amadeusLocationsSearch({ keyword, subType }) {
+async function searchLocations(keyword, subType) {
   const token = await getAmadeusToken();
   if (!token) return [];
 
-  const baseUrl = process.env.AMADEUS_BASE_URL || "https://test.api.amadeus.com";
-  const url = new URL(`${baseUrl}/v1/reference-data/locations`);
+  const url = new URL(`${BASE_URL}/v1/reference-data/locations`);
   url.searchParams.set("keyword", keyword);
-  url.searchParams.set("subType", subType);
+  url.searchParams.set("subType", subType);        // "CITY" or "AIRPORT"
+  url.searchParams.set("page[limit]", "10");
 
   const res = await fetch(url, {
     headers: { Authorization: `Bearer ${token}` },
@@ -58,24 +100,53 @@ async function amadeusLocationsSearch({ keyword, subType }) {
   return Array.isArray(json?.data) ? json.data : [];
 }
 
-function looksLikeIata3(s) {
-  return typeof s === "string" && /^[A-Za-z]{3}$/.test(s.trim());
+function pickFirstIata(data) {
+  for (const item of data) {
+    if (looksLikeIata3(item?.iataCode)) return item.iataCode.toUpperCase();
+  }
+  return null;
+}
+
+async function resolveCity(place) {
+  for (const kw of buildKeywordAttempts(place)) {
+    const data = await searchLocations(kw, "CITY");
+    const code = pickFirstIata(data);
+    if (code) return code;
+  }
+  return null;
+}
+
+async function resolveAirport(place) {
+  // Try airports first (best for flights)
+  for (const kw of buildKeywordAttempts(place)) {
+    const data = await searchLocations(kw, "AIRPORT");
+    const code = pickFirstIata(data);
+    if (code) return code;
+  }
+  // Fallback: city code often works for flight search too
+  return await resolveCity(place);
 }
 
 export async function resolveIataCityCode(place) {
   if (!place) return null;
   if (looksLikeIata3(place)) return place.trim().toUpperCase();
 
-  const data = await amadeusLocationsSearch({ keyword: place, subType: "CITY" });
-  const first = data.find((x) => looksLikeIata3(x?.iataCode));
-  return first?.iataCode?.toUpperCase() ?? null;
+  const key = `CITY::${normalizePlace(place).toLowerCase()}`;
+  if (cache.has(key)) return cache.get(key);
+
+  const cityCode = await resolveCity(place);
+  cache.set(key, cityCode);
+  return cityCode;
 }
 
 export async function resolveIataAirportCode(place) {
   if (!place) return null;
   if (looksLikeIata3(place)) return place.trim().toUpperCase();
 
-  const data = await amadeusLocationsSearch({ keyword: place, subType: "AIRPORT" });
-  const first = data.find((x) => looksLikeIata3(x?.iataCode));
-  return first?.iataCode?.toUpperCase() ?? null;
+  const key = `AIRPORT::${normalizePlace(place).toLowerCase()}`;
+  if (cache.has(key)) return cache.get(key);
+
+  const airportCode = await resolveAirport(place);
+  cache.set(key, airportCode);
+  return airportCode;
 }
