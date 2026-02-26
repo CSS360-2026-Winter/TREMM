@@ -22,11 +22,10 @@ export default {
       const result = await getTopRestaurants({ location });
       if (!result.ok) return interaction.editReply(result.message);
 
-      const lines = [`**Top Restaurants in ${location}**`];
+      const lines = [`**Top Restaurants in ${location}**`, ""];
 
       result.restaurants.forEach((r, index) => {
         lines.push(
-          "",
           `**${index + 1}. ${r.name}**`,
           `Category: ${r.category}`,
           `Address: ${r.address}`,
@@ -36,7 +35,8 @@ export default {
         );
       });
 
-      await interaction.editReply(lines.filter(Boolean).join("\n"));
+      await interaction.editReply(lines.filter(v => v != null).join("\n"));
+      await interaction.editReply(lines.filter(v => v !== null && v !== undefined).join("\n"));
     } catch (err) {
       console.error("restaurants command error:", err);
       await interaction.editReply("Something Went Wrong With Getting Restaurants.");
