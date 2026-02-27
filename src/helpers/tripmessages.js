@@ -1,12 +1,34 @@
-// src/helpers/tripMessages.js
+// src/helpers/tripmessage.js
 
 function stripHtml(s) {
-  return String(s ?? "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+  return String(s ?? "")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function truncate(s, max = 1800) {
   const t = String(s ?? "");
   return t.length > max ? t.slice(0, max - 1) + "…" : t;
+}
+
+// Match your /flights command formatting
+function formatDateTime(isoString) {
+  if (!isoString || isoString === "N/A") return "N/A";
+
+  const d = new Date(isoString);
+  if (Number.isNaN(d.getTime())) return isoString;
+
+  const date = d.toLocaleDateString([], { month: "short", day: "numeric" });
+  const time = d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+
+  return `${date} • ${time}`;
+}
+
+function formatStops(stops) {
+  if (stops === 0) return "Nonstop";
+  if (stops === 1) return "1 stop";
+  return `${stops} stops`;
 }
 
 function statusDot(section) {
@@ -68,28 +90,46 @@ function formatWeather(result) {
       : `Weather for **${loc}**`;
 
   const days = nextDays.length
-    ? "\n\n" + nextDays.map((d) => `• **${d.label}:** ${Math.round(d.min)}°F–${Math.round(d.max)}°F — ${d.desc}`).join("\n")
+    ? "\n\n" +
+      nextDays
+        .map((d) => `• **${d.label}:** ${Math.round(d.min)}°F–${Math.round(d.max)}°F — ${d.desc}`)
+        .join("\n")
     : "";
 
   return `${headline}${days}`;
 }
 
-function formatFlights(result) {
+// ---- Flights formatting (match /flights look) ----
+function formatOneWayFlights(oneWay) {
+  if (!oneWay?.ok) return oneWay?.message ?? "Flights unavailable.";
+
+  const flights = (oneWay.flights ?? []).slice(0, 5);
+  if (!flights.length) return "No flights found.";
+
+  const blocks = flights.map((f) => {
+    return (
+      `**${f.airline}**\n\n` +
+      `| **${f.price}** | **${formatStops(f.stops)}**\n` +
+      `Depart: **${formatDateTime(f.departTime)}**\n` +
+      `Arrive: **${formatDateTime(f.arriveTime)}**`
+    );
+  });
+
+  return blocks.join("\n\n──────────────\n\n");
+}
+
+function formatFlights(result, { departDate, returnDate, adults }) {
   if (!result?.ok) return result?.message ?? "Flights unavailable.";
 
-  const pickTop = (oneWay) => {
-    if (!oneWay?.ok) return null;
-    const flights = (oneWay.flights ?? []).slice(0, 3);
-    if (!flights.length) return null;
-    return flights
-      .map((f, i) => `${i + 1}. **${f.airline}** — **${f.price}** — stops: ${f.stops}\nDepart: ${f.departTime}\nArrive: ${f.arriveTime}`)
-      .join("\n\n");
-  };
+  const outTxt = formatOneWayFlights(result.outbound);
+  const retTxt = formatOneWayFlights(result.inbound);
 
-  const outTxt = pickTop(result.outbound) ?? "No outbound flights found.";
-  const retTxt = pickTop(result.inbound) ?? "No return flights found.";
-
-  return `**Outbound (${result.origin} → ${result.destAirport})**\n${truncate(outTxt, 850)}\n\n**Return (${result.destAirport} → ${result.origin})**\n${truncate(retTxt, 850)}`;
+  return (
+    `**Outbound (${result.origin} → ${result.destAirport})** on **${departDate}** (Adults: **${adults}**)\n\n` +
+    `${outTxt}\n\n` +
+    `**Return (${result.destAirport} → ${result.origin})** on **${returnDate}** (Adults: **${adults}**)\n\n` +
+    `${retTxt}`
+  );
 }
 
 export function buildTripMessages(brief) {
@@ -120,7 +160,14 @@ export function buildTripMessages(brief) {
   const restaurants = `🍽️ **Top restaurants**\n${formatRestaurants(sections.restaurants.data)}`;
   const activities = `🎟️ **Activities**\n${formatActivities(sections.activities.data)}`;
   const hotels = `🏨 **Hotels**\n${formatHotels(sections.hotels.data)}`;
-  const flights = `✈️ **Flights (round trip = 2 one-ways)**\n${formatFlights(sections.flights.data)}`;
+
+  const flights =
+    `✈️ **Flights (round trip = 2 one-ways)**\n\n` +
+    formatFlights(sections.flights.data, {
+      departDate: dates.departDate,
+      returnDate: dates.returnDate,
+      adults,
+    });
 
   return [summary, weather, restaurants, activities, hotels, flights];
 }
