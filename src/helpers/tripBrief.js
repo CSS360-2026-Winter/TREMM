@@ -36,8 +36,14 @@ export async function getTripBrief({
   const ret = parseIsoDateUtc(returnDate);
   const tripLenDays = daysBetweenUtc(dep, ret);
 
-  const origin = (originAirport || process.env.DEFAULT_ORIGIN_IATA || "").toUpperCase() || null;
+  let originRaw = (originAirport || process.env.DEFAULT_ORIGIN_IATA || "").trim();
+  let origin = originRaw ? originRaw.toUpperCase() : null;
 
+// If user typed "Los Angeles" instead of "LAX", auto-resolve it:
+if (origin && !/^[A-Z]{3}$/.test(origin)) {
+  const resolvedOrigin = await resolveIataAirportCode(originRaw);
+  origin = resolvedOrigin ?? null;
+}
   // Resolve codes for hotels/flights (best effort)
   const [cityCode, destAirport] = await Promise.all([
     resolveIataCityCode(destination),
