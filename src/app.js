@@ -4,9 +4,21 @@ import { loadEvents } from "./helpers";
 import path from "path";
 import { loadCommands } from "./helpers/loadCommands";
 
+// --- Crash guards (prevents bot from dying on unhandled errors) ---
+process.on("unhandledRejection", (err) => {
+  console.error("UnhandledRejection:", err);
+});
 
+process.on("uncaughtException", (err) => {
+  console.error("UncaughtException:", err);
+});
 
 const TOKEN = process.env.TOKEN;
+
+if (!TOKEN) {
+  console.error("Missing TOKEN in environment. Check your .env / secrets.");
+  process.exit(1);
+}
 
 const { Guilds, GuildMembers, GuildMessages, MessageContent } =
   GatewayIntentBits;
