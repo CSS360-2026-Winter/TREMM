@@ -1,29 +1,31 @@
 // src/events/interactionCreate.js
-module.exports = {
-  name: "interactionCreate",
+import { Events } from "discord.js";
+
+export default {
+  name: Events.InteractionCreate,
   async execute(interaction) {
-    if (!interaction.isChatInputCommand()) return;
-
-    const command = interaction.client.commands.get(interaction.commandName);
-    if (!command) return;
-
     try {
+      if (!interaction.isChatInputCommand()) return;
+
+      const command = interaction.client.commands.get(interaction.commandName);
+      if (!command) return;
+
+      // IMPORTANT: don't defer/reply here. Commands handle it.
       await command.execute(interaction);
-    } catch (err) {
-      console.error("Command error:", err);
+    } catch (error) {
+      console.error("Failed to handle interaction:", error);
 
-      const msg = "Something went wrong :( Try again in a moment.";
-
-      // ✅ Never reply twice; use editReply if already deferred/replied
       try {
         if (interaction.deferred || interaction.replied) {
-          await interaction.editReply(msg);
+          await interaction.editReply("⚠️ Something went wrong. Please try again.");
         } else {
-          await interaction.reply({ content: msg, ephemeral: true });
+          await interaction.reply({
+            content: "⚠️ Something went wrong. Please try again.",
+            ephemeral: true,
+          });
         }
       } catch (e) {
-        // If the interaction is already dead, don’t crash the bot
-        console.error("Failed to respond to interaction:", e);
+        console.error("Failed to send error response:", e);
       }
     }
   },

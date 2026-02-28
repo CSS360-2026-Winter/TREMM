@@ -23,23 +23,50 @@ export default {
     .setName("tripbrief")
     .setDescription("Plan a trip: weather + hotels + flights + restaurants + activities")
     .addStringOption((opt) =>
-      opt.setName("destination").setDescription('Example: "Paris, FR" or "Los Angeles, CA"').setRequired(true)
+      opt
+        .setName("destination")
+        .setDescription('Example: "Paris, FR" or "Los Angeles, CA"')
+        .setRequired(true)
     )
-    .addStringOption((opt) => opt.setName("depart").setDescription("YYYY-MM-DD").setRequired(true))
-    .addStringOption((opt) => opt.setName("return").setDescription("YYYY-MM-DD").setRequired(true))
-    .addIntegerOption((opt) => opt.setName("adults").setDescription("Number of adults (default 1)"))
-    .addStringOption((opt) => opt.setName("origin").setDescription("Origin airport IATA (optional). Example: SEA")),
+    .addStringOption((opt) =>
+      opt.setName("depart").setDescription("YYYY-MM-DD").setRequired(true)
+    )
+    .addStringOption((opt) =>
+      opt.setName("return").setDescription("YYYY-MM-DD").setRequired(true)
+    )
+    .addIntegerOption((opt) =>
+      opt.setName("adults").setDescription("Number of adults (default 1)")
+    )
+    .addStringOption((opt) =>
+      opt
+        .setName("origin")
+        .setDescription("Origin airport IATA (optional). Example: SEA")
+    ),
 
   async execute(interaction) {
-    await interaction.deferReply();
+    // Defer ASAP (ONLY ONCE)
+    try {
+      await interaction.deferReply();
+    } catch (e) {
+      console.error("tripbrief deferReply failed:", e);
+      return;
+    }
 
-    const destination = interaction.options.getString("destination", true).trim();
+    const destination = interaction.options
+      .getString("destination", true)
+      .trim();
     const departDate = interaction.options.getString("depart", true);
     const returnDate = interaction.options.getString("return", true);
     const adults = interaction.options.getInteger("adults") ?? 1;
     const originAirport = interaction.options.getString("origin")?.trim();
 
-    const brief = await getTripBrief({ destination, departDate, returnDate, adults, originAirport });
+    const brief = await getTripBrief({
+      destination,
+      departDate,
+      returnDate,
+      adults,
+      originAirport,
+    });
     if (!brief.ok) return interaction.editReply(`❌ ${brief.message}`);
 
     const messages = buildTripMessages(brief); // array of strings
@@ -62,4 +89,3 @@ export default {
     }
   },
 };
-

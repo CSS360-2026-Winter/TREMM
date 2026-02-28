@@ -36,7 +36,7 @@ export async function getTripBrief({
   const ret = parseIsoDateUtc(returnDate);
   const tripLenDays = daysBetweenUtc(dep, ret);
 
-  const origin = (originAirport || process.env.DEFAULT_ORIGIN_IATA || "").toUpperCase() || null;
+  const origin = (originAirport || process.env.DEFAULT_ORIGIN_IATA || "SEA").toUpperCase();
 
   // Resolve codes for hotels/flights (best effort)
   const [cityCode, destAirport] = await Promise.all([
