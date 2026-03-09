@@ -1,0 +1,56 @@
+{
+  "version": "1.0.0",
+  "name": "memebot_discord",
+  "dependencies": {
+    "amadeus": {
+      "version": "11.0.0",
+      "resolved": "https://registry.npmjs.org/amadeus/-/amadeus-11.0.0.tgz",
+      "overridden": false
+    },
+    "ascii-table": {
+      "version": "0.0.9",
+      "resolved": "https://registry.npmjs.org/ascii-table/-/ascii-table-0.0.9.tgz",
+      "overridden": false
+    },
+    "axios": {
+      "version": "0.27.2",
+      "resolved": "https://registry.npmjs.org/axios/-/axios-0.27.2.tgz",
+      "overridden": false
+    },
+    "chai": {
+      "version": "4.3.6",
+      "resolved": "https://registry.npmjs.org/chai/-/chai-4.3.6.tgz",
+      "overridden": false
+    },
+    "discord.js": {
+      "version": "14.5.0",
+      "resolved": "https://registry.npmjs.org/discord.js/-/discord.js-14.5.0.tgz",
+      "overridden": false
+    },
+    "dotenv": {
+      "version": "16.6.1",
+      "resolved": "https://registry.npmjs.org/dotenv/-/dotenv-16.6.1.tgz",
+      "overridden": false
+    },
+    "esbuild-runner": {
+      "version": "2.2.1",
+      "resolved": "https://registry.npmjs.org/esbuild-runner/-/esbuild-runner-2.2.1.tgz",
+      "overridden": false
+    },
+    "esbuild": {
+      "version": "0.15.9",
+      "resolved": "https://registry.npmjs.org/esbuild/-/esbuild-0.15.9.tgz",
+      "overridden": false
+    },
+    "mocha": {
+      "version": "10.0.0",
+      "resolved": "https://registry.npmjs.org/mocha/-/mocha-10.0.0.tgz",
+      "overridden": false
+    },
+    "nodemon": {
+      "version": "2.0.20",
+      "resolved": "https://registry.npmjs.org/nodemon/-/nodemon-2.0.20.tgz",
+      "overridden": false
+    }
+  }
+}

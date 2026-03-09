@@ -36,6 +36,21 @@ async function getFlightOptions({ origin, destination, departureDate, adults = 1
     };
   }
 
+  // Normalize inputs
+  const norm = (s) => String(s || "").trim().toUpperCase();
+  origin = norm(origin);
+  destination = norm(destination);
+  departureDate = String(departureDate).trim();
+  adults = Number(adults) || 1;
+
+  // Amadeus requires 3-letter IATA airport/city codes (e.g., LAX, SEA, IAH)
+  if (!/^[A-Z]{3}$/.test(origin) || !/^[A-Z]{3}$/.test(destination)) {
+    return {
+      ok: false,
+      message: `Flights need 3-letter IATA airport codes (ex: SEA, LAX, IAH). Got origin="${origin}", destination="${destination}".`,
+    };
+  }
+
   const amadeusClientId = process.env.AMADEUS_CLIENT_ID;
   const amadeusClientSecret = process.env.AMADEUS_CLIENT_SECRET;
 
@@ -62,8 +77,8 @@ async function getFlightOptions({ origin, destination, departureDate, adults = 1
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
       try {
         response = await amadeus.shopping.flightOffersSearch.get({
-          originLocationCode: origin.toUpperCase(),
-          destinationLocationCode: destination.toUpperCase(),
+          originLocationCode: origin,
+          destinationLocationCode: destination,
           departureDate,
           adults,
           max: 5,
@@ -73,6 +88,7 @@ async function getFlightOptions({ origin, destination, departureDate, adults = 1
         lastError = err;
         const status = err?.response?.statusCode;
 
+        // For 4xx, it's usually a validation/input problem — don't retry.
         if (status && status >= 400 && status < 500) throw err;
         if (attempt === MAX_RETRIES) throw lastError;
 
@@ -119,11 +135,15 @@ async function getFlightOptions({ origin, destination, departureDate, adults = 1
     return { ok: true, flights: simplified };
   } catch (err) {
     const status = err?.response?.statusCode;
-    const msg = err?.description || err?.message || "Unknown error";
+
+    // Amadeus puts details in response.data (often an object)
+    const data = err?.response?.data;
+    const details =
+      data ? JSON.stringify(data) : (err?.description || err?.message || "Unknown error");
 
     return {
       ok: false,
-      message: `Flight API error${status ? ` (${status})` : ""}: ${msg}`,
+      message: `Flight API error${status ? ` (${status})` : ""}: ${details}`,
     };
   }
 }
