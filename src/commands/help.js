@@ -1,5 +1,33 @@
 import { SlashCommandBuilder } from "discord.js";
 
+function splitMessage(text, maxLength = 1800) {
+  const lines = text.trim().split("\n");
+  const chunks = [];
+  let current = "";
+
+  for (const line of lines) {
+    const candidate = current ? `${current}\n${line}` : line;
+
+    if (candidate.length > maxLength) {
+      if (current) chunks.push(current);
+
+      if (line.length > maxLength) {
+        for (let i = 0; i < line.length; i += maxLength) {
+          chunks.push(line.slice(i, i + maxLength));
+        }
+        current = "";
+      } else {
+        current = line;
+      }
+    } else {
+      current = candidate;
+    }
+  }
+
+  if (current) chunks.push(current);
+  return chunks;
+}
+
 export default {
   data: new SlashCommandBuilder()
     .setName("help")
@@ -20,7 +48,7 @@ TREMM is a travel planning Discord bot built to help users organize a trip from 
 - Press enter to run the command
 ## /plantrip
 ### What it does
-The `/plantrip` command serves as the main starting point for TREMM. It is designed to help users begin the travel-planning process and understand how to use the bot effectively.
+The plantrip command serves as the main starting point for TREMM. It is designed to help users begin the travel-planning process and understand how to use the bot effectively.
 ### Inputs
 - City you are traveling to (Press enter after) 
 - Date in  \`YYYY-MM-DD\` format (When it askes you for the planed dates)
@@ -41,7 +69,7 @@ The `/plantrip` command serves as the main starting point for TREMM. It is desig
 ### Inputs
 - \`destination\`
 - The destination should be a real city or recognizable place name
-- Best input format: clear locations such as `Seattle, WA`, `Los Angeles, CA`, or `Paris, FR`
+- Best input format: clear locations such as \`Seattle, WA\`, \`Los Angeles, CA\`, or \`Paris, FR\`
 ### Output
 - A list of activities, attractions, or tours for the destination
 - Results that help the user decide what to do during their trip
@@ -53,7 +81,7 @@ The `/plantrip` command serves as the main starting point for TREMM. It is desig
 - Larger or more popular destinations may return more detailed results than smaller places
 ## /resturant
 ### What it does
-- The `/restaurants` command helps users find places to eat in a destination. It is used to search for restaurants in a city or location so users can explore dining options while planning their trip.
+- The /restaurants command helps users find places to eat in a destination. It is used to search for restaurants in a city or location so users can explore dining options while planning their trip.
 ### Inputs
 - \`location\`
 - The location should be a real city or recognizable place name
@@ -69,7 +97,7 @@ The `/plantrip` command serves as the main starting point for TREMM. It is desig
 - Larger or more popular cities may return better and more complete results than smaller places
 ## /weather
 ### What it does
-- The `/weather` command helps users check the weather for a destination. It is used to give weather information for a place so users can better prepare for their trip and understand the conditions they may experience.
+- The /weather command helps users check the weather for a destination. It is used to give weather information for a place so users can better prepare for their trip and understand the conditions they may experience.
 ### Inputs
 - \`place\'
 - The place should be a real city or recognizable location
@@ -86,7 +114,7 @@ The `/plantrip` command serves as the main starting point for TREMM. It is desig
     # TREMM Help Guide
 ## /flights
 ### What it does
-- The `/flights` command helps users search for flight options between two airports. It is used to find possible flight routes for a trip by taking an origin airport, destination airport, departure date, and optional traveler count.
+- The /flights command helps users search for flight options between two airports. It is used to find possible flight routes for a trip by taking an origin airport, destination airport, departure date, and optional traveler count.
 ### Inputs
 - \`origin\`
 - \`destination\`
@@ -107,40 +135,74 @@ The `/plantrip` command serves as the main starting point for TREMM. It is desig
 - Invalid or unrealistic dates may return errors or no results
 - Flight results depend on API availability, route availability, and trip date
 - The command may return fewer results if there are limited flights for that route
-## /newhotel
+## /hotel
 ### What it does
-- Searches for hotel availability
+- The /newhotel command helps users search for hotel options in a destination for specific travel dates. It is used to check hotel availability by taking a city, check-in date, check-out date, and number of adults.
+
 ### Inputs
 - \`city\`
 - \`check_in\`
 - \`check_out\`
 - \`adults\`
-### Input format
-- City should be a valid destination
-- Dates should be in \`YYYY-MM-DD\`
-- Adults should be a whole number
+### Input Format
+- \`city\` should be a real and recognizable destination
+- \`check_in\` must be in \`YYYY-MM-DD\` format
+- \`check_out\` must be in \`YYYY-MM-DD\` format
+- \`adults\` should be a whole number
+### Output
+- A list of hotel options for the destination and dates entered
+- Include hotel names, prices, ratings and booking links
+- Gives users  results that match their trip details
 ### Restrictions
-- Check-out must be after check-in
-- Invalid dates may fail
+- \`city\` must be a valid destination the API can recognize
+- \`check_in\` and \`check_out\` must be in the correct \`YYYY-MM-DD\` format
+- \`check_out\` must be after \`check_in\`
+- Invalid dates may cause the search to fail or return no results
+- \`adults\` must be a valid whole number
+- Hotel results depend on API availability, destination coverage, and the dates entered
+- Some locations may return fewer hotel results than others
 `;
     const part4 = `
     # TREMM Help Guide
 ## /tripbrief
 ### What it does
-- Creates a full trip summary using multiple bot features together
+- The /tripbrief command helps users create a more complete trip summary by combining multiple parts of travel planning into one command.
+- It gathers important trip details such as destination, travel dates, number of adults, optional origin airport, and now whether the user wants to save the trip.
+- It can return a broader overview that may include flights, hotels, weather, restaurants, and activities.
+- If save:true is selected, it also saves the trip as TXT and JSON files.
+
 ### Inputs
 - \`destination\`
 - \`depart\`
 - \`return\`
 - optional \`adults\`
 - optional \`origin\`
+- optional \`save\`
+
 ### Input format
-- Destination should be a real place like \`Paris, FR\` or \`Los Angeles, CA\`
-- Dates should be in \`YYYY-MM-DD\`
-- Origin, if used, should be an IATA code like \`SEA\` ( Used for flights)
+- \`destination\` should be a real and recognizable location
+- Best format: \`Seattle, WA\`, \`Los Angeles, CA\`, or \`Paris, FR\`
+- \`depart\` must be in \`YYYY-MM-DD\` format
+- \`return\` must be in \`YYYY-MM-DD\` format
+- \`adults\` should be a whole number
+- \`origin\`, if used, should be a valid IATA airport code such as SEA, LAX, or JFK
+- \`save\` must be either \`true\` or \`false\`
+
+### Output
+- A broader trip-planning summary based on the inputs entered
+- May include combined travel information such as flights, hotels, weather, restaurants, and activities depending on API availability
+- If save:true is used, the bot also confirms the trip was saved and gives the user a tripId
+- If saving works, the bot sends the saved TXT file as an attachment
+
 ### Restrictions
-- Return date must be after depart date
-- More complete input gives better results
+- \`destination\` must be valid and specific enough to be recognized correctly
+- \`depart\` and \`return\` must be in the correct \`YYYY-MM-DD\` format
+- \`return\` must be after \`depart\`
+- \`adults\` must be a valid whole number if included
+- \`origin\` must be a valid IATA airport code if included
+- \`save\` only works if the trip generates successfully first
+- Results depend on API availability, destination coverage, and whether each part of the trip data is available
+- If one part of the trip data is weak or unavailable, some sections of the trip brief may be less detailed, but the command should still avoid crashing
 ## /help
 ### What it does
 - Shows this help guide
@@ -153,9 +215,67 @@ The `/plantrip` command serves as the main starting point for TREMM. It is desig
 - More complete inputs give better results
 `;
 
-    await interaction.editReply({ content: part1 });
-    await interaction.followUp({ content: part2 });
-    await interaction.followUp({ content: part3 });
-    await interaction.followUp({ content: part4 });
+    const part5 = `
+    ## /savedtrips
+### What it does
+- The /savedtrips command shows the trips a user has previously saved from /tripbrief.
+- It helps users review their saved trip briefs without having to generate them again.
+- It displays saved trip information such as destination, trip ID, dates, adults, origin, saved time, and file names.
+### Inputs
+- optional \`limit\`
+### Input format
+- \`limit\` should be a whole number
+- Default is 10
+- Maximum is 20
+### Output
+- A list of the user's saved trip briefs
+- Includes:
+  - destination
+  - tripId
+  - trip dates
+  - number of adults
+  - origin airport
+  - time saved
+  - saved TXT and JSON file names
+### Restrictions
+- Only shows trips saved by that Discord user
+- If no trips are saved, it will tell the user they do not have any saved trips yet
+- To create a saved trip, the user must use tripbrief with save:true
+- The command is sent as an ephemeral response, so only the user can see it
+## /deletetrip
+### What it does
+- The /deletetrip command deletes one of the user's previously saved trip briefs.
+- It removes the saved trip files using the trip ID provided by the user.
+- It is useful for cleaning up old or unwanted saved trip plans.
+### Inputs
+- \`tripid\`
+### Input format
+- tripid must match a valid saved trip ID
+- The user should copy the trip ID from savedtrips
+### Output
+- Confirmation that the saved trip was deleted
+- Shows the deleted \`tripId\`
+- Shows the files that were removed
+### Restrictions
+- The trip ID must belong to a trip saved by that Discord user
+- If the trip ID is invalid or does not exist, the command will return a warning or error
+- The command is sent as an ephemeral response, so only the user can see it
+- This command only deletes saved trip files and does not generate a new trip
+`
+
+
+    const chunks = [
+      ...splitMessage(part1),
+      ...splitMessage(part2),
+      ...splitMessage(part3),
+      ...splitMessage(part4),
+      ...splitMessage(part5),
+    ];
+
+    await interaction.editReply({ content: chunks[0] });
+
+    for (const chunk of chunks.slice(1)) {
+      await interaction.followUp({ content: chunk });
+    }
   },
 };
