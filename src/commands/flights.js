@@ -1,5 +1,10 @@
 // src/commands/flights.js
-const { SlashCommandBuilder } = require("discord.js");
+const {
+  SlashCommandBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+} = require("discord.js");
 const { getFlightOptions } = require("../helpers/flights");
 
 // Format ISO datetime like "2026-02-20T09:18:00" → "Feb 20 • 9:18 AM"
@@ -40,7 +45,7 @@ function dedupeFlights(flights) {
   return unique;
 }
 
-/* -------------------- NEW: validation helpers -------------------- */
+/* -------------------- validation helpers -------------------- */
 
 function normalizeIata(code) {
   return (code || "").trim().toUpperCase();
@@ -51,13 +56,11 @@ function isValidIata(code) {
 }
 
 function parseISODate(dateStr) {
-  // Expected: YYYY-MM-DD
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return null;
 
   const [y, m, d] = dateStr.split("-").map(Number);
   const dt = new Date(Date.UTC(y, m - 1, d));
 
-  // Validate it didn't overflow (e.g., 2026-02-99)
   if (
     dt.getUTCFullYear() !== y ||
     dt.getUTCMonth() !== m - 1 ||
@@ -65,6 +68,7 @@ function parseISODate(dateStr) {
   ) {
     return null;
   }
+
   return dt;
 }
 
@@ -80,6 +84,7 @@ function validateInputs({ origin, destination, departureDate, adults }) {
   if (!isValidIata(origin)) {
     return "❌ Invalid origin airport code. Please use a 3-letter IATA code like SEA.";
   }
+
   if (!isValidIata(destination)) {
     return "❌ Invalid destination airport code. Please use a 3-letter IATA code like LAX.";
   }
@@ -88,6 +93,7 @@ function validateInputs({ origin, destination, departureDate, adults }) {
   if (!dateObj) {
     return "❌ Invalid date. Please use YYYY-MM-DD (example: 2026-03-10).";
   }
+
   if (isPastDateUTC(dateObj)) {
     return "❌ That date is in the past. Please choose today or a future date.";
   }
@@ -99,9 +105,22 @@ function validateInputs({ origin, destination, departureDate, adults }) {
   return null;
 }
 
-/* -------------------- NEW: response formatting helper -------------------- */
+/* -------------------- booking link helper -------------------- */
 
-function buildFlightsMessage({ origin, destination, departureDate, adults, flights }) {
+function buildGoogleFlightsLink(origin, destination, departureDate) {
+  const query = `${origin} to ${destination} on ${departureDate}`;
+  return `https://www.google.com/travel/flights?q=${encodeURIComponent(query)}`;
+}
+
+/* -------------------- response formatting helper -------------------- */
+
+function buildFlightsMessage({
+  origin,
+  destination,
+  departureDate,
+  adults,
+  flights,
+}) {
   const header = `✈️ **Flights ${origin} → ${destination}** on **${departureDate}** (Adults: **${adults}**)`;
 
   if (!flights || flights.length === 0) {
@@ -147,13 +166,13 @@ module.exports = {
     ),
 
   async execute(interaction) {
-    // Read + normalize first (so we can validate before deferReply)
     const origin = normalizeIata(interaction.options.getString("origin"));
-    const destination = normalizeIata(interaction.options.getString("destination"));
+    const destination = normalizeIata(
+      interaction.options.getString("destination")
+    );
     const departureDate = (interaction.options.getString("date") || "").trim();
     const adults = interaction.options.getInteger("adults") ?? 1;
 
-    // Validate BEFORE searching flights
     const validationError = validateInputs({
       origin,
       destination,
@@ -165,7 +184,6 @@ module.exports = {
       return interaction.reply({ content: validationError, ephemeral: true });
     }
 
-    // Now do the slower work
     await interaction.deferReply();
 
     try {
@@ -190,7 +208,23 @@ module.exports = {
         flights,
       });
 
-      return interaction.editReply(message);
+      const bookingUrl = buildGoogleFlightsLink(
+        origin,
+        destination,
+        departureDate
+      );
+
+      const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setLabel("Book on Google Flights")
+          .setStyle(ButtonStyle.Link)
+          .setURL(bookingUrl)
+      );
+
+      return interaction.editReply({
+        content: `${message}\n\n🔗 View & book flights: ${bookingUrl}`,
+        components: [row],
+      });
     } catch (err) {
       console.error("Flight command error:", err);
       return interaction.editReply(
