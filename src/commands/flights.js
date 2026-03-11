@@ -89,6 +89,10 @@ function validateInputs({ origin, destination, departureDate, adults }) {
     return "❌ Invalid destination airport code. Please use a 3-letter IATA code like LAX.";
   }
 
+  if (origin === destination) {
+    return "❌ Origin and destination cannot be the same. Please choose different airports.";
+  }
+
   const dateObj = parseISODate(departureDate);
   if (!dateObj) {
     return "❌ Invalid date. Please use YYYY-MM-DD (example: 2026-03-10).";
@@ -124,7 +128,7 @@ function buildFlightsMessage({
   const header = `✈️ **Flights ${origin} → ${destination}** on **${departureDate}** (Adults: **${adults}**)`;
 
   if (!flights || flights.length === 0) {
-    return `${header}\n\nNo flights found. Try a different date or route.`;
+    return `${header}\n\n❌ No flights found for that route and date. Try a different date or nearby airport.`;
   }
 
   const flightBlocks = flights.map((f, i) => {
