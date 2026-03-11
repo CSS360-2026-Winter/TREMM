@@ -83,6 +83,9 @@ function validateInputs({ origin, destination, departureDate, adults }) {
   if (!isValidIata(destination)) {
     return "❌ Invalid destination airport code. Please use a 3-letter IATA code like LAX.";
   }
+  if (origin === destination) {
+    return "❌ Origin and destination cannot be the same. Please choose different airports.";
+  }
 
   const dateObj = parseISODate(departureDate);
   if (!dateObj) {
@@ -101,11 +104,17 @@ function validateInputs({ origin, destination, departureDate, adults }) {
 
 /* -------------------- NEW: response formatting helper -------------------- */
 
-function buildFlightsMessage({ origin, destination, departureDate, adults, flights }) {
+function buildFlightsMessage({
+  origin,
+  destination,
+  departureDate,
+  adults,
+  flights,
+}) {
   const header = `✈️ **Flights ${origin} → ${destination}** on **${departureDate}** (Adults: **${adults}**)`;
 
   if (!flights || flights.length === 0) {
-    return `${header}\n\nNo flights found. Try a different date or route.`;
+    return `${header}\n\n❌ No flights found for that route and date. Try a different date or nearby airport.`;
   }
 
   const flightBlocks = flights.map((f, i) => {
@@ -149,7 +158,9 @@ module.exports = {
   async execute(interaction) {
     // Read + normalize first (so we can validate before deferReply)
     const origin = normalizeIata(interaction.options.getString("origin"));
-    const destination = normalizeIata(interaction.options.getString("destination"));
+    const destination = normalizeIata(
+      interaction.options.getString("destination")
+    );
     const departureDate = (interaction.options.getString("date") || "").trim();
     const adults = interaction.options.getInteger("adults") ?? 1;
 
