@@ -1,5 +1,5 @@
 const event = {
-  name: "ready",
+  name: "clientReady",
   once: true,
   execute(client) {
     console.log(`
