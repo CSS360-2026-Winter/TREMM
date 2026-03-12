@@ -9,10 +9,8 @@ import { geocodePlace } from "./geocode.js";
 import { getActivitiesByLatLon } from "./amadeus.js";
 
 // CJS helpers (build output is CJS, so plain require is safest)
-import { getWeather } from "./weather.js";
-import { getFlightOptions } from "./flights.js";
-/*const { getWeather } = require("./weather.js");
-const { getFlightOptions } = require("./flights");*/
+const { getWeather } = require("./weather.js");
+const { getFlightOptions } = require("./flights");
 
 function makeFallbackActivities(destination) {
   return [
@@ -38,7 +36,8 @@ export async function getTripBrief({
   const ret = parseIsoDateUtc(returnDate);
   const tripLenDays = daysBetweenUtc(dep, ret);
 
-  const origin = (originAirport || process.env.DEFAULT_ORIGIN_IATA || "SEA").toUpperCase();
+  let origin = (originAirport || process.env.DEFAULT_ORIGIN_IATA || "SEA").toUpperCase();
+  if (origin === "LA") origin = "LAX";
 
   // Resolve codes for hotels/flights (best effort)
   const [cityCode, destAirport] = await Promise.all([

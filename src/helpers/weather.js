@@ -102,27 +102,28 @@ function isTwoLetterCode(s) {
 
 // -------------------- Weather code -> description --------------------
 // Open-Meteo weather codes: https://open-meteo.com/en/docs
+const WEATHER_CODE_DESC = new Map([
+  [0, "clear sky"],
+  [1, "mainly clear"],
+  [2, "partly cloudy"],
+  [3, "overcast"],
+  [45, "fog"], [48, "fog"],
+  [51, "drizzle"], [53, "drizzle"], [55, "drizzle"],
+  [56, "freezing drizzle"], [57, "freezing drizzle"],
+  [61, "rain"], [63, "rain"], [65, "rain"],
+  [66, "freezing rain"], [67, "freezing rain"],
+  [71, "snow"], [73, "snow"], [75, "snow"],
+  [77, "snow grains"],
+  [80, "rain showers"], [81, "rain showers"], [82, "rain showers"],
+  [85, "snow showers"], [86, "snow showers"],
+  [95, "thunderstorm"],
+  [96, "thunderstorm w/ hail"], [99, "thunderstorm w/ hail"],
+]);
+
 function weatherCodeToDesc(code) {
   if (code == null) return "forecast";
   const c = Number(code);
-
-  if (c === 0) return "clear sky";
-  if (c === 1) return "mainly clear";
-  if (c === 2) return "partly cloudy";
-  if (c === 3) return "overcast";
-  if (c === 45 || c === 48) return "fog";
-  if (c === 51 || c === 53 || c === 55) return "drizzle";
-  if (c === 56 || c === 57) return "freezing drizzle";
-  if (c === 61 || c === 63 || c === 65) return "rain";
-  if (c === 66 || c === 67) return "freezing rain";
-  if (c === 71 || c === 73 || c === 75) return "snow";
-  if (c === 77) return "snow grains";
-  if (c === 80 || c === 81 || c === 82) return "rain showers";
-  if (c === 85 || c === 86) return "snow showers";
-  if (c === 95) return "thunderstorm";
-  if (c === 96 || c === 99) return "thunderstorm w/ hail";
-
-  return "mixed";
+  return WEATHER_CODE_DESC.get(c) ?? "mixed";
 }
 
 // -------------------- Forecast summarization --------------------
@@ -162,22 +163,26 @@ function summarizeNextDays(daily, days = 7) {
 }
 
 // -------------------- Geocoding (Open-Meteo) --------------------
-async function geocodePlace(place) {
-  const normalized = normalizePlace(place);
-  const { city, regionOrState, country } = parsePlaceParts(normalized);
-
+function validateCity(city) {
   if (!city || city.length < 2) {
-    return { ok: false, message: `Type a real place name (ex: "Seattle" or "Seattle, WA").` };
+    return {
+      ok: false,
+      message: `Type a real place name (ex: "Seattle" or "Seattle, WA").`,
+    };
   }
+  return { ok: true };
+}
 
+function deriveGeoHints({ regionOrState, country }) {
   let countryCode = "";
   let stateFull = "";
 
   if (country && isTwoLetterCode(country)) {
     countryCode = country.toUpperCase();
+    return { countryCode, stateFull };
   }
 
-  if (!countryCode && regionOrState && isTwoLetterCode(regionOrState)) {
+  if (regionOrState && isTwoLetterCode(regionOrState)) {
     const st = regionOrState.toUpperCase();
     if (US_STATE[st]) {
       countryCode = "US";
@@ -185,53 +190,103 @@ async function geocodePlace(place) {
     }
   }
 
-  const url =
+  return { countryCode, stateFull };
+}
+
+function buildGeocodeUrl(city, countryCode) {
+  return (
     `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}` +
     `&count=10&language=en&format=json` +
-    (countryCode ? `&countryCode=${encodeURIComponent(countryCode)}` : "");
+    (countryCode ? `&countryCode=${encodeURIComponent(countryCode)}` : "")
+  );
+}
+
+function extractResults(data) {
+  const results = data?.results ?? [];
+  return Array.isArray(results) ? results : [];
+}
+
+function errorNoResults(place) {
+  return {
+    ok: false,
+    message: `Couldn't find **${place}**. Try adding a country like "Seattle, US" or "Paris, FR".`,
+  };
+}
+
+function dedupeByLatLon(results) {
+  const seen = new Set();
+  const out = [];
+
+  for (const r of results) {
+    const key = `${r?.latitude},${r?.longitude}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      out.push(r);
+    }
+  }
+
+  return out;
+}
+
+function filterByAdmin1Exact(results, admin1Full) {
+  const target = (admin1Full ?? "").toLowerCase();
+  if (!target) return results;
+
+  const filtered = results.filter((r) => (r.admin1 ?? "").toLowerCase() === target);
+  return filtered.length ? filtered : results;
+}
+
+function filterByAdmin1Includes(results, regionOrState) {
+  const q = (regionOrState ?? "").trim();
+  if (!q || q.length <= 2) return results;
+
+  const ql = q.toLowerCase();
+  const filtered = results.filter((r) => (r.admin1 ?? "").toLowerCase().includes(ql));
+  return filtered.length ? filtered : results;
+}
+
+function chooseMostPopulated(results) {
+  const sorted = [...results].sort((a, b) => (b.population ?? 0) - (a.population ?? 0));
+  return sorted[0] ?? null;
+}
+
+function formatChosenLocation(chosen) {
+  return (
+    `${chosen.name}${chosen.admin1 ? `, ${chosen.admin1}` : ""}, ` +
+    `${chosen.country} (${chosen.country_code})`
+  );
+}
+
+async function geocodePlace(place) {
+  const normalized = normalizePlace(place);
+  const { city, regionOrState, country } = parsePlaceParts(normalized);
+
+  const valid = validateCity(city);
+  if (!valid.ok) return valid;
+
+  const { countryCode, stateFull } = deriveGeoHints({ regionOrState, country });
+  const url = buildGeocodeUrl(city, countryCode);
 
   const data = await fetchJson(url);
-  let results = data?.results ?? [];
+  let results = extractResults(data);
 
-  if (!Array.isArray(results) || results.length === 0) {
-    return {
-      ok: false,
-      message: `Couldn't find **${place}**. Try adding a country like "Seattle, US" or "Paris, FR".`,
-    };
+  if (results.length === 0) return errorNoResults(place);
+
+  results = dedupeByLatLon(results);
+  results = filterByAdmin1Exact(results, stateFull);
+
+  if (!stateFull) {
+    results = filterByAdmin1Includes(results, regionOrState);
   }
 
-  // Dedupe by lat/lon
-  results = results.filter(
-    (r, i, arr) =>
-      i === arr.findIndex((x) => x.latitude === r.latitude && x.longitude === r.longitude)
-  );
-
-  if (stateFull) {
-    const filtered = results.filter(
-      (r) => (r.admin1 ?? "").toLowerCase() === stateFull.toLowerCase()
-    );
-    if (filtered.length) results = filtered;
-  }
-
-  if (!stateFull && regionOrState && regionOrState.length > 2) {
-    const filtered = results.filter((r) =>
-      (r.admin1 ?? "").toLowerCase().includes(regionOrState.toLowerCase())
-    );
-    if (filtered.length) results = filtered;
-  }
-
-  results.sort((a, b) => (b.population ?? 0) - (a.population ?? 0));
-  const chosen = results[0];
-
-  const location =
-    `${chosen.name}${chosen.admin1 ? `, ${chosen.admin1}` : ""}, ` +
-    `${chosen.country} (${chosen.country_code})`;
+  const chosen = chooseMostPopulated(results);
+  if (!chosen) return errorNoResults(place);
 
   return {
     ok: true,
     latitude: chosen.latitude,
     longitude: chosen.longitude,
-    location,
+    location: formatChosenLocation(chosen),
     timezone: chosen.timezone ?? "auto",
   };
 }
@@ -246,6 +301,30 @@ async function fetchForecast(lat, lon, timezone = "auto") {
   return fetchJson(url);
 }
 
+// -------------------- Current extraction helpers (reduce getWeather complexity) --------------------
+function toFOrNull(c) {
+  return c == null ? null : cToF(c);
+}
+
+function toMphOrNull(kmh) {
+  return kmh == null ? null : kmhToMph(kmh);
+}
+
+function extractCurrent(data) {
+  const cur = data?.current ?? {};
+  return {
+    temp: toFOrNull(cur.temperature_2m),
+    feels: toFOrNull(cur.temperature_2m), // Open-Meteo doesn't provide "feels like" here
+    humidity: cur.relative_humidity_2m ?? null,
+    wind: toMphOrNull(cur.wind_speed_10m),
+    desc: weatherCodeToDesc(cur.weather_code),
+  };
+}
+
+function hasDailyForecast(data) {
+  return Boolean(data?.daily?.time?.length);
+}
+
 // -------------------- Public API --------------------
 async function getWeather(place) {
   const cacheKey = normalizePlace(place).toLowerCase();
@@ -253,21 +332,13 @@ async function getWeather(place) {
   if (cached) return cached;
 
   const geo = await geocodePlace(place);
-
   if (!geo.ok) {
     cacheSet(cacheKey, geo);
     return geo;
   }
 
   const data = await fetchForecast(geo.latitude, geo.longitude, geo.timezone);
-
-  const currentC = data?.current?.temperature_2m ?? null;
-  const humidity = data?.current?.relative_humidity_2m ?? null;
-  const windKmh = data?.current?.wind_speed_10m ?? null;
-  const curCode = data?.current?.weather_code ?? null;
-
-  const daily = data?.daily;
-  if (!daily?.time?.length) {
+  if (!hasDailyForecast(data)) {
     const fail = { ok: false, message: `Forecast unavailable for **${place}** right now.` };
     cacheSet(cacheKey, fail);
     return fail;
@@ -276,14 +347,8 @@ async function getWeather(place) {
   const result = {
     ok: true,
     location: geo.location,
-    current: {
-      temp: currentC != null ? cToF(currentC) : null,
-      feels: currentC != null ? cToF(currentC) : null, // Open-Meteo doesn't provide "feels like" in this simple endpoint
-      humidity,
-      wind: windKmh != null ? kmhToMph(windKmh) : null,
-      desc: weatherCodeToDesc(curCode),
-    },
-    nextDays: summarizeNextDays(daily, 7),
+    current: extractCurrent(data),
+    nextDays: summarizeNextDays(data.daily, 7),
   };
 
   cacheSet(cacheKey, result);
@@ -291,3 +356,4 @@ async function getWeather(place) {
 }
 
 module.exports = { getWeather };
+
